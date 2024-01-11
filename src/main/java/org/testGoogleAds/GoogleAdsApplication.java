@@ -10,7 +10,10 @@ import com.google.ads.googleads.v15.services.UserListOperation;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+
 
 @SpringBootApplication
 public class GoogleAdsApplication {
@@ -19,15 +22,17 @@ public class GoogleAdsApplication {
         SpringApplication.run(GoogleAdsApplication.class, args);
 
         // Replace this with your actual file path
-        String excelFilePath = "path/to/your/excel/file.xlsx";
+//        String excelFilePath = "path/to/your/excel/file.xlsx";
+        List<String> testLIst = new ArrayList<>();
+        testLIst.addAll(Arrays.asList("v", "d", "v","v","v", "d", "v","v"));
 
         try {
-            // Validate the Excel file
-            List<String> listOpe = ValidateFile.validateExcelFile(new File(excelFilePath));
+            // get fields from file excel
+            List<String> errors  = ValidateFile.validateExcelFile(new File(excelFilePath));
 
 
-            // If validation succeeds, build UserListOperations
-            List<UserListOperation> operations = buildUserListOperation(listOpe);
+            // handle build operations
+            List<UserListOperation> operations = buildUserListOperation(testLIst);
 
             // Mutate user lists using Google Ads API
             HandleMutator.mutateUserLists(GoogleAdsClient.newBuilder().build(), operations);
@@ -41,29 +46,29 @@ public class GoogleAdsApplication {
 //        return null;
 //    }
 
-    private static UserListOperation buildUserListOperationsFromExcel(
-            String type, String userListName, String description, String precondition,
-            String listOperator, String url, String ruleType, String ruleOperator) {
+//    private static UserListOperation buildUserListOperationsFromExcel(
+//            String type, String userListName, String description, String precondition,
+//            String listOperator, String url, String ruleType, String ruleOperator) {
+//
+//        UserListOperation.Builder operationBuilder = UserListOperation.newBuilder();
+//
+//        if ("ADD".equalsIgnoreCase(type)) {
+//            operationBuilder.setCreate(buildUserList(
+//                    userListName, description, precondition, listOperator, url, ruleType, ruleOperator));
+//        } else if ("UPDATE".equalsIgnoreCase(type)) {
+//            operationBuilder.setUpdate(buildUserList(
+//                    userListName, description, precondition, listOperator, url, ruleType, ruleOperator));
+//        }
+//
+//        return operationBuilder.build();
+//    }
 
-        UserListOperation.Builder operationBuilder = UserListOperation.newBuilder();
 
-        if ("ADD".equalsIgnoreCase(type)) {
-            operationBuilder.setCreate(buildUserList(
-                    userListName, description, precondition, listOperator, url, ruleType, ruleOperator));
-        } else if ("UPDATE".equalsIgnoreCase(type)) {
-            operationBuilder.setUpdate(buildUserList(
-                    userListName, description, precondition, listOperator, url, ruleType, ruleOperator));
-        }
-
-        return operationBuilder.build();
-    }
-
-
-    private static void mutateUserLists(List<UserListOperation> operations) {
-        // Implement this method to handle the mutation of user lists
-        // Use the GoogleAdsClient bean to interact with the Google Ads API
-        // Example: GoogleAdsClient googleAdsClient = applicationContext.getBean(GoogleAdsClient.class);
-        // Use the client to perform operations on Google Ads API
-        // Example: userListServiceClient.mutateUserLists(googleAdsClient, operations);
-    }
+//    private static void mutateUserLists(List<UserListOperation> operations) {
+//        // Implement this method to handle the mutation of user lists
+//        // Use the GoogleAdsClient bean to interact with the Google Ads API
+//        // Example: GoogleAdsClient googleAdsClient = applicationContext.getBean(GoogleAdsClient.class);
+//        // Use the client to perform operations on Google Ads API
+//        // Example: userListServiceClient.mutateUserLists(googleAdsClient, operations);
+//    }
 }

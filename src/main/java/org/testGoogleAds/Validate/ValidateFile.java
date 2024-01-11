@@ -23,12 +23,14 @@ public class ValidateFile {
     }
 
     public static List<String> validateExcelFile(File excelFile) throws IOException {
+        List<String> errors = new ArrayList<>();
+
         try (FileInputStream fi = new FileInputStream(excelFile);
              Workbook workbook = WorkbookFactory.create(fi)) {
 
             Sheet sheet = workbook.getSheet("Userlist Info");
             if (sheet == null) {
-                throw new IllegalArgumentException("Sheet 'Userlist Info' not found ");
+                errors.add("Sheet UserlistInfo not found ");
             }
 
             for (Row row : sheet) {
@@ -36,46 +38,83 @@ public class ValidateFile {
                     continue;
                 }
 
-                return validateRow(row);
+                List<String> rowErrors = validateRow(row);
+                if(!rowErrors.isEmpty()){
+                    errors.addAll(rowErrors);
+                }
             }
         }
+        return errors;
     }
-//handle check columns of file
-    public static List<String>  validateRow(Row row){
+    public static List<String>  GetFieldsRow(Row row){
+        List<String> rowErrors = new ArrayList<>();
+
         String type = getStringCellValue(row, 0);
         String userListName = getStringCellValue(row, 1);
         String description = getStringCellValue(row, 2);
         String precondition = getStringCellValue(row, 3);
         String listOperator = getStringCellValue(row, 4);
-        String ruleType = getStringCellValue(row, 5);
-        String ruleOperator = getStringCellValue(row, 6);
+        String url = getStringCellValue(row, 5);
+        String ruleType = getStringCellValue(row, 6);
+        String ruleOperator = getStringCellValue(row,7 );
 
 
-        validateEnum("Type", type.toUpperCase(), VALID_TYPE);
-        validateStringLength("Userlistname", userListName, 100);
-        validateStringLength("Description", description, 200);
-        validateEnum("Precondition", precondition.toUpperCase(), VALID_PRECONDITION);
-        validateEnum("List Operator", listOperator.toUpperCase(), VALID_LIST_OPERATOR);
-        validateEnum("Rule Type", ruleType.toUpperCase(), VALID_RULE_TYPES);
-        validateEnum("Rule Operator", ruleOperator.toUpperCase(), VALID_RULE_OPERATORS);
+        validateEnum("Type", type.toUpperCase(), VALID_TYPE, rowErrors);
+        validateStringLength("Userlistname", userListName, 100, rowErrors);
+        validateStringLength("Description", description, 200, rowErrors);
+        validateEnum("Precondition", precondition.toUpperCase(), VALID_PRECONDITION, rowErrors);
+        validateEnum("List Operator", listOperator.toUpperCase(), VALID_LIST_OPERATOR, rowErrors);
+        validateEnum("Rule Type", ruleType.toUpperCase(), VALID_RULE_TYPES, rowErrors);
+        validateEnum("Rule Operator", ruleOperator.toUpperCase(), VALID_RULE_OPERATORS, rowErrors);
+        
 
-        return Arrays.asList(type, userListName, description, precondition, listOperator, ruleType, ruleOperator);
+
+        return rowErrors;
     }
+
+
+//handle check columns of file
+    public static List<String>  validateRow(Row row){
+        List<String> rowErrors = new ArrayList<>();
+
+        String type = getStringCellValue(row, 0);
+        String userListName = getStringCellValue(row, 1);
+        String description = getStringCellValue(row, 2);
+        String precondition = getStringCellValue(row, 3);
+        String listOperator = getStringCellValue(row, 4);
+        String url = getStringCellValue(row, 5);
+        String ruleType = getStringCellValue(row, 6);
+        String ruleOperator = getStringCellValue(row,7 );
+
+
+        validateEnum("Type", type.toUpperCase(), VALID_TYPE, rowErrors);
+        validateStringLength("Userlistname", userListName, 100, rowErrors);
+        validateStringLength("Description", description, 200, rowErrors);
+        validateEnum("Precondition", precondition.toUpperCase(), VALID_PRECONDITION, rowErrors);
+        validateEnum("List Operator", listOperator.toUpperCase(), VALID_LIST_OPERATOR, rowErrors);
+        validateEnum("Rule Type", ruleType.toUpperCase(), VALID_RULE_TYPES, rowErrors);
+        validateEnum("Rule Operator", ruleOperator.toUpperCase(), VALID_RULE_OPERATORS, rowErrors);
+
+
+        return rowErrors;
+    }
+
 
 //Handle check enum
-    public static void validateEnum(String fieldName, String value, List<String> validValues) {
-        for (String validValue : validValues) {
-            if (validValue.equalsIgnoreCase(value)) {
-                return;
+    public static void validateEnum(String fieldName, String value, List<String> validValues, List<String> errors) {
+            if(validValues.contains(value)) {
+                return ;
+            }
+            else{
+                errors.add(fieldName + " must be one of : " + String.join(",", validValues));
             }
         }
-        throw new IllegalArgumentException(fieldName + " must be one of: " + String.join(", ", validValues));
-    }
 
 //    handle check length
-    public static void validateStringLength(String fieldName, String value, int maxLength) {
-        if (value.length() > maxLength) {
-            throw new IllegalArgumentException(fieldName + " must not exceed " + maxLength + " characters.");
+    public static void validateStringLength(String fieldName, String value, int maxLength, List<String> errors) {
+        if (value.length() > maxLength){
+        errors.add(fieldName+" must not exceed "+maxLength+"characters ");
         }
     }
+
 }
