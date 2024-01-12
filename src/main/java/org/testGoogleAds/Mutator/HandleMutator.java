@@ -2,10 +2,7 @@ package org.testGoogleAds.Mutator;
 
 import com.google.ads.googleads.lib.GoogleAdsClient;
 import com.google.ads.googleads.v15.common.*;
-import com.google.ads.googleads.v15.enums.UserListLogicalRuleOperatorEnum;
-import com.google.ads.googleads.v15.enums.UserListMembershipStatusEnum;
-import com.google.ads.googleads.v15.enums.UserListPrepopulationStatusEnum;
-import com.google.ads.googleads.v15.enums.UserListTypeEnum;
+import com.google.ads.googleads.v15.enums.*;
 import com.google.ads.googleads.v15.resources.UserList;
 import com.google.ads.googleads.v15.services.*;
 
@@ -16,16 +13,16 @@ public class HandleMutator {
 
     public  static UserListOperation buildUserListOperation(
             String type, String userListName, String description, String precondition,
-            String listOperator, String url, String ruleType, String ruleOperator) {
+            String listOperator, String url, String ruleType, String ruleOperator, String ruleItem) {
 
         UserListOperation.Builder operationBuilder = UserListOperation.newBuilder();
 
         if ("ADD".equalsIgnoreCase(type)) {
             operationBuilder.setCreate(buildUserList(
-                    userListName, description, precondition, listOperator, url, ruleType, ruleOperator));
+                    userListName, description, precondition, listOperator, url, ruleType, ruleOperator, ruleItem));
         } else if ("UPDATE".equalsIgnoreCase(type)) {
             operationBuilder.setUpdate(buildUserList(
-                    userListName, description, precondition, listOperator, url, ruleType, ruleOperator));
+                    userListName, description, precondition, listOperator, url, ruleType, ruleOperator, ruleItem));
         }
 
         return operationBuilder.build();
@@ -33,57 +30,61 @@ public class HandleMutator {
 
     private static UserList buildUserList(
             String userListName, String description, String precondition,
-            String listOperator, String url, String ruleType, String ruleOperator) {
+            String listOperator, String url, String ruleType, String ruleOperator, String ruleItem) {
         UserList.Builder userListBuilder = UserList.newBuilder()
                 .setName(userListName)
                 .setDescription(description)
                 .setMembershipStatus(UserListMembershipStatusEnum.UserListMembershipStatus.OPEN)
-                .setLogicalUserList(
-                        buildLogicalUserList(precondition, listOperator, url, ruleType, ruleOperator)
-                )
-                .setType(UserListTypeEnum.UserListType.LOGICAL);
+                .setRuleBasedUserList(buildRuleBaseUserList(precondition, listOperator, url, ruleType, ruleOperator, ruleItem))
+                .setType(UserListTypeEnum.UserListType.RULE_BASED);
 
         return userListBuilder.build();
     }
 
-    private static LogicalUserListInfo buildLogicalUserList(
-            String precondition, String listOperator, String url, String ruleType, String ruleOperator) {
+    private static RuleBasedUserListInfo buildRuleBaseUserList(
+            String precondition, String listOperator, String url, String ruleType, String ruleOperator, String ruleItem) {
 
-        UserListRuleInfo.Builder ruleInfoBuilder = UserListRuleInfo.newBuilder()
-                .addAllRuleItemGroups(buildRuleItemGroups(url, ruleOperator));
-
-        return LogicalUserListInfo.newBuilder()
+        return RuleBasedUserListInfo.newBuilder()
                 .setPrepopulationStatus(UserListPrepopulationStatusEnum.UserListPrepopulationStatus.valueOf(precondition))
-                .setRuleBasedUserList(ruleInfoBuilder)
+                .setFlexibleRuleUserList(buildFlexibleRuleOperator(listOperator, url, ruleType, ruleOperator, ruleItem))
                 .build();
     }
 
-    private static List<UserListRuleItemGroupInfo> buildRuleItemGroups(String url, String ruleOperator) {
+    private static FlexibleRuleUserListInfo buildFlexibleRuleOperator(
+            String listOperator, String url, String ruleType, String ruleOperator, String ruleItem) {
+       return    FlexibleRuleUserListInfo.newBuilder()
+                .setInclusiveRuleOperator(UserListFlexibleRuleOperatorEnum.UserListFlexibleRuleOperator.valueOf(ruleOperator))
+                .addExclusiveOperands(buildRuleOperand(url, ruleType,ruleItem))
+                .addInclusiveOperands(buildRuleOperand(url, ruleType, ruleItem))
+               .build();
 
-        UserListRuleItemInfo ruleItemInfo = UserListRuleItemInfo.newBuilder()
-                .setName("url_rule")
-                .setStringRuleItem(UserListStringRuleItemInfo.newBuilder()
-                        .setOperator(UserListLogicalRuleOperatorEnum.UserListLogicalRuleOperator.valueOf(ruleOperator))
-                        .setValue(url)
+
+//        if ("Include".equalsIgnoreCase(listOperator)) {
+//            buildRuleOperand(url, ruleType, ruleOperator, ruleItem);
+//        } else if ("Exclude".equalsIgnoreCase(listOperator)) {
+//            buildRuleOperand(url, ruleType, ruleOperator, ruleItem);
+//        }
+//        return flexRuleInfoBuild.build();
+
+    }
+
+    private static FlexibleRuleOperandInfo buildRuleOperand(String url, String ruleType, String ruleItem) {
+        return FlexibleRuleOperandInfo.newBuilder()
+                .setRule(UserListRuleInfo.newBuilder()
+                        .setRuleType(UserListRuleTypeEnum.UserListRuleType.OR_OF_ANDS)
+                        .addRuleItemGroups(UserListRuleItemGroupInfo.newBuilder()
+                                .addRuleItems(UserListRuleItemInfo.newBuilder()
+                                        .setStringRuleItem(UserListStringRuleItemInfo.newBuilder()
+                                                .setValue(url)
+                                                .setOperator(UserListStringRuleItemOperatorEnum.UserListStringRuleItemOperator.valueOf(ruleItem))
+                                                .build())
+                                        .build())
+                                .build())
                         .build())
                 .build();
-
-        UserListRuleItemGroupInfo ruleItemGroupInfo = UserListRuleItemGroupInfo.newBuilder()
-                .addAllRuleItems(Arrays.asList(ruleItemInfo))
-//                .setOperator(UserListLogicalRuleOperatorEnum.UserListLogicalRuleOperator.valueOf(ruleOperator))
-                .build();
-
-
-        return Arrays.asList(ruleItemGroupInfo);
     }
 
-    public static void mutateUserLists(GoogleAdsClient googleAdsClient, List<UserListOperation> operations) {
-        try (UserListServiceClient userListServiceClient = googleAdsClient.getVersion15().createUserListServiceClient()) {
-            MutateUserListsResponse response = userListServiceClient.mutateUserLists(operations);
-            for (MutateUserListResult result : response.getResultsList()) {
-                System.out.println("UserList with resource name '" + result.getResourceName() +
-                        "' has been added/updated.");
-            }
-        }
-    }
+
+
+
 }

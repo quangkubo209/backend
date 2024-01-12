@@ -6,15 +6,17 @@ import java.lang.reflect.Array;
 import java.util.*;
 
 import com.google.ads.googleads.v15.services.UserListOperation;
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.*;
 
 public class ValidateFile {
 
     private static final List<String> VALID_RULE_TYPES = Arrays.asList("URL", "REF_URL");
-    private static final List<String> VALID_RULE_OPERATORS = Arrays.asList("CONTAINS", "EQUALS", "STARTS_WITH", "ENDS_WITH", "NOT_CONTAINS", "NOT_EQUALS", "NOT_ENDS_WITH", "NOT_STARTS_WITH");
+    private static final List<String> VALID_RULE_OPERATORS = Arrays.asList("AND", "OR");
+    private static final List<String> VALID_RULE_ITEM = Arrays.asList("CONTAINS", "EQUALS", "STARTS_WITH", "ENDS_WITH", "NOT_CONTAINS", "NOT_EQUALS", "NOT_ENDS_WITH", "NOT_STARTS_WITH");
     private static final List<String> VALID_PRECONDITION = Arrays.asList("ENABLE", "DISABLE");
-    private static final List<String> VALID_LIST_OPERATOR = Arrays.asList("INCLUSIVE", "EXCLUSIVE");
+    private static final List<String> VALID_LIST_OPERATOR = Arrays.asList("INCLUDE", "EXCLUDE");
     private static final List<String> VALID_TYPE = Arrays.asList("ADD", "UPDATE");
     private static String getStringCellValue(Row row, int cellIndex) {
         Cell cell = row.getCell(cellIndex, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
@@ -22,8 +24,43 @@ public class ValidateFile {
         return cell.getStringCellValue().trim();
     }
 
-    public static List<String> validateExcelFile(File excelFile) throws IOException {
+    public static List<String> validateExcelFile(File excelFile)  {
         List<String> errors = new ArrayList<>();
+        System.out.println(excelFile.getName());
+
+
+        try (FileInputStream fi = new FileInputStream(excelFile);
+             Workbook workbook = WorkbookFactory.create(fi)) {
+
+            Sheet sheet = workbook.getSheet("UserlistInfo");
+            System.out.println(workbook.getSheetName(0));
+
+            if (sheet == null) {
+                errors.add("Sheet UserlistInfo not found!!! ");
+            } else {
+                for (Row row : sheet) {
+                    if (row.getRowNum() == 0) {
+                        continue; // Skip header row
+                    }
+
+                    List<String> rowErrors = validateRow(row);
+                    if (!rowErrors.isEmpty()) {
+                        errors.addAll(rowErrors);
+                    }
+                }
+            }
+        } catch (IOException  e) {
+            System.out.println("error");
+            // Handle exceptions related to file reading or workbook creation
+//            e.printStackTrace();
+        }
+
+        return errors;
+    }
+
+    public static List<String> getFields(File excelFile) throws IOException {
+        List<String> errors = new ArrayList<>();
+        List<String> fields  = new ArrayList<>();
 
         try (FileInputStream fi = new FileInputStream(excelFile);
              Workbook workbook = WorkbookFactory.create(fi)) {
@@ -42,9 +79,13 @@ public class ValidateFile {
                 if(!rowErrors.isEmpty()){
                     errors.addAll(rowErrors);
                 }
+                else{
+                    fields.addAll(GetFieldsRow(row));
+                }
             }
+
         }
-        return errors;
+        return fields;
     }
     public static List<String>  GetFieldsRow(Row row){
         List<String> rowErrors = new ArrayList<>();
@@ -54,9 +95,10 @@ public class ValidateFile {
         String description = getStringCellValue(row, 2);
         String precondition = getStringCellValue(row, 3);
         String listOperator = getStringCellValue(row, 4);
-        String url = getStringCellValue(row, 5);
+        String URL = getStringCellValue(row, 5);
         String ruleType = getStringCellValue(row, 6);
         String ruleOperator = getStringCellValue(row,7 );
+        String ruleItem = getStringCellValue(row, 8);
 
 
         validateEnum("Type", type.toUpperCase(), VALID_TYPE, rowErrors);
@@ -65,11 +107,13 @@ public class ValidateFile {
         validateEnum("Precondition", precondition.toUpperCase(), VALID_PRECONDITION, rowErrors);
         validateEnum("List Operator", listOperator.toUpperCase(), VALID_LIST_OPERATOR, rowErrors);
         validateEnum("Rule Type", ruleType.toUpperCase(), VALID_RULE_TYPES, rowErrors);
+        validateEnum("Rule item", ruleItem.toUpperCase(), VALID_RULE_ITEM, rowErrors);
         validateEnum("Rule Operator", ruleOperator.toUpperCase(), VALID_RULE_OPERATORS, rowErrors);
-        
 
-
-        return rowErrors;
+        if(rowErrors.isEmpty()){
+            return Arrays.asList(type, userListName, description, precondition, listOperator, ruleType, ruleItem, ruleOperator);
+        }
+        return null;
     }
 
 
@@ -82,9 +126,10 @@ public class ValidateFile {
         String description = getStringCellValue(row, 2);
         String precondition = getStringCellValue(row, 3);
         String listOperator = getStringCellValue(row, 4);
-        String url = getStringCellValue(row, 5);
+        String URL = getStringCellValue(row, 5);
         String ruleType = getStringCellValue(row, 6);
         String ruleOperator = getStringCellValue(row,7 );
+        String ruleItem = getStringCellValue(row, 8);
 
 
         validateEnum("Type", type.toUpperCase(), VALID_TYPE, rowErrors);
@@ -93,6 +138,7 @@ public class ValidateFile {
         validateEnum("Precondition", precondition.toUpperCase(), VALID_PRECONDITION, rowErrors);
         validateEnum("List Operator", listOperator.toUpperCase(), VALID_LIST_OPERATOR, rowErrors);
         validateEnum("Rule Type", ruleType.toUpperCase(), VALID_RULE_TYPES, rowErrors);
+        validateEnum("Rule item", ruleItem.toUpperCase(), VALID_RULE_ITEM, rowErrors);
         validateEnum("Rule Operator", ruleOperator.toUpperCase(), VALID_RULE_OPERATORS, rowErrors);
 
 
