@@ -61,15 +61,7 @@ public class UserListController {
         }
     }
 
-    @PostMapping("/mutate/getTest")
-    public ResponseEntity<Object> getFiledTest(@RequestParam("file") MultipartFile file) {
-        try {
-            List<String> response = getFields( convertMultiPartToFile(file));
-            return ResponseEntity.status(HttpStatus.OK).body(response);
-        } catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error processing the file");
-        }
-    }
+
 
     @PostMapping("/actions")
     public void createAction(@RequestBody Action action) {

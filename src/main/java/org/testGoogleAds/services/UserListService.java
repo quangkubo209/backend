@@ -7,16 +7,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.testGoogleAds.Mutator.HandleMutator;
 import org.testGoogleAds.Validate.ValidateFile;
+import org.testGoogleAds.mapper.ActionMapper;
+import org.testGoogleAds.model.Action;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
 public class UserListService {
+    @Autowired
+    private ActionMapper actionMapper;
     private final long customerId = 3434;
     private final GoogleAdsClient googleAdsClient = GoogleAdsClient.newBuilder()
             .fromEnvironment()
@@ -28,13 +29,13 @@ public class UserListService {
 
     public Map<String, Object> mutateExcelFile(File excelFile) throws IOException {
         Map<String, Object> response = new HashMap<>();
-        List<String> errors = ValidateFile.validateExcelFile(excelFile);
-
-        if (!errors.isEmpty()) {
-            response.put("errorStatus", true);
-            response.put("errors", errors);
-            return response;
-        }
+//        List<String> errors = ValidateFile.validateExcelFile(excelFile);
+//
+//        if (!errors.isEmpty()) {
+//            response.put("errorStatus", true);
+//            response.put("errors", errors);
+//            return response;
+//        }
 
         List<String> fieldList = ValidateFile.getFields(excelFile);
         String type = fieldList.get(0);
@@ -49,6 +50,20 @@ public class UserListService {
         UserListOperation operation = HandleMutator.buildUserListOperation(type, userListName, description, precondition, url, ruleType, ruleOperator, ruleItem);
 
         response = mutateUserLists(customerId, operation);
+        if( ((boolean) response.get("errorStatus"))){
+            Action newaction = new Action();
+            newaction.fileName = "UserlistInfo";
+            newaction.status = "true";
+            newaction.detail = String.valueOf((response.get("errors").toString()));
+            actionMapper.insertAction(newaction);
+        }
+        else{
+            Action newaction = new Action();
+            newaction.fileName = "UserlistInfo";
+            newaction.status = "false";
+            newaction.detail = null;
+            actionMapper.insertAction(newaction);
+        }
         return response;
     }
 
