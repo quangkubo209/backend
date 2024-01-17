@@ -16,7 +16,7 @@ public class ValidateFile {
     private static final List<String> VALID_RULE_OPERATORS = Arrays.asList("AND", "OR");
     private static final List<String> VALID_RULE_ITEM = Arrays.asList("CONTAINS", "EQUALS", "STARTS_WITH", "ENDS_WITH", "NOT_CONTAINS", "NOT_EQUALS", "NOT_ENDS_WITH", "NOT_STARTS_WITH");
     private static final List<String> VALID_PRECONDITION = Arrays.asList("ENABLE", "DISABLE");
-    private static final List<String> VALID_LIST_OPERATOR = Arrays.asList("INCLUDE", "EXCLUDE");
+    private static final List<String> VALID_LIST_OPERATOR = Arrays.asList("INCLUDE,EXCLUDE", "EXCLUDE,INCLUDE");
     private static final List<String> VALID_TYPE = Arrays.asList("ADD", "UPDATE");
     private static String getStringCellValue(Row row, int cellIndex) {
         Cell cell = row.getCell(cellIndex, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
@@ -58,7 +58,8 @@ public class ValidateFile {
         return errors;
     }
 
-    public static List<String> getFields(File excelFile) throws IOException {
+    //get all field if validate is success.
+    public  static List<String> getFields(File excelFile)  {
         List<String> errors = new ArrayList<>();
         List<String> fields  = new ArrayList<>();
 
@@ -84,6 +85,9 @@ public class ValidateFile {
                 }
             }
 
+        }
+        catch(IOException e){
+            e.printStackTrace();
         }
         return fields;
     }
@@ -111,7 +115,7 @@ public class ValidateFile {
         validateEnum("Rule Operator", ruleOperator.toUpperCase(), VALID_RULE_OPERATORS, rowErrors);
 
         if(rowErrors.isEmpty()){
-            return Arrays.asList(type, userListName, description, precondition, listOperator, ruleType, ruleItem, ruleOperator);
+            return Arrays.asList(type, userListName, description, precondition,URL, ruleType, ruleItem, ruleOperator);
         }
         return null;
     }

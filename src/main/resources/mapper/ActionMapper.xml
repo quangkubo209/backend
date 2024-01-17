@@ -1,0 +1,34 @@
+<!--<mapper namespace="org.testGoogleAds.mapper.ActionMapper">-->
+
+<!--    <insert id="insertAction" parameterType="org.testGoogleAds.model.Action">-->
+<!--        INSERT INTO action (fileName, status, detail)-->
+<!--        VALUES (#{fileName}, #{status}, #{detail})-->
+<!--    </insert>-->
+
+<!--    <select id="getAllActions" resultType="org.testGoogleAds.model.Action">-->
+<!--        SELECT * FROM action-->
+<!--    </select>-->
+
+<!--</mapper>-->
+
+
+<mapper namespace="org.testGoogleAds.mapper.ActionMapper">
+
+    <resultMap id="actionResultMap" type="org.testGoogleAds.model.Action">
+        <id column="id" property="id"/>
+        <result column="fileName" property="fileName"/>
+        <result column="status" property="status"/>
+        <result column="detail" property="detail"/>
+    </resultMap>
+
+    <select id="getAllActions" resultMap="actionResultMap">
+        SELECT * FROM action
+    </select>
+
+    <insert id="insertAction" parameterType="org.testGoogleAds.model.Action">
+        INSERT INTO action ( fileName, status, detail)
+        VALUES ( #{fileName}, #{status}, #{detail})
+    </insert>
+
+</mapper>
+
