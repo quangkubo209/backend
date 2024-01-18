@@ -43,9 +43,13 @@ public class HandleMutator {
 
     private static RuleBasedUserListInfo buildRuleBaseUserList(
             String precondition,  String url, String ruleType, String ruleOperator, String ruleItem) {
-
+        if(precondition.equalsIgnoreCase("enable")){
+            return RuleBasedUserListInfo.newBuilder()
+                    .setPrepopulationStatus(UserListPrepopulationStatusEnum.UserListPrepopulationStatus.REQUESTED)
+                    .setFlexibleRuleUserList(buildFlexibleRuleOperator(url, ruleType, ruleOperator, ruleItem))
+                    .build();
+        }
         return RuleBasedUserListInfo.newBuilder()
-                .setPrepopulationStatus(UserListPrepopulationStatusEnum.UserListPrepopulationStatus.valueOf(precondition))
                 .setFlexibleRuleUserList(buildFlexibleRuleOperator(url, ruleType, ruleOperator, ruleItem))
                 .build();
     }

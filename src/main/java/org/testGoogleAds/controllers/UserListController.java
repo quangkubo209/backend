@@ -6,6 +6,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.testGoogleAds.Validate.ValidateFile;
+import org.testGoogleAds.mapper.ActionMapper;
 import org.testGoogleAds.model.Action;
 import org.testGoogleAds.services.ActionService;
 import org.testGoogleAds.services.UserListService;
@@ -15,15 +17,21 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.*;
 
-import static org.testGoogleAds.Validate.ValidateFile.getFields;
 
 @RestController
 @RequestMapping("/api/userlist")
 public class UserListController {
+    private final long customerId = 2096752498;
+     GoogleAdsClient googleAdsClient = GoogleAdsClient.newBuilder()
+            .fromPropertiesFile(new File("src/main/resources/application.properties"))
+            .build();
+
+     UserListService userListService;
 
     @Autowired
-    private UserListService userListService;
-    private ActionService actionService;
+    public UserListController(UserListService userListService) throws IOException {
+        this.userListService = userListService;
+    }
 
 
     //handle validate data from file excel
@@ -51,10 +59,21 @@ public class UserListController {
         }
     }
 //    handle mutate media
+
     @PostMapping("/mutate/excel")
     public ResponseEntity<Object> mutateExcel(@RequestParam("file") MultipartFile file) {
         try {
-            Map<String,Object> response = userListService.mutateExcelFile( convertMultiPartToFile(file));
+            Map<String,Object> response = userListService.mutateExcelFile( googleAdsClient,customerId, convertMultiPartToFile(file));
+            return ResponseEntity.status(HttpStatus.OK).body(response);
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error processing the file");
+        }
+    }
+
+    @PostMapping("/mutate/getFields")
+    public ResponseEntity<Object> getFields(@RequestParam("file") MultipartFile file) {
+        try {
+            List<String> response = ValidateFile.getFields(  convertMultiPartToFile(file));
             return ResponseEntity.status(HttpStatus.OK).body(response);
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error processing the file");
@@ -62,11 +81,6 @@ public class UserListController {
     }
 
 
-
-    @PostMapping("/actions")
-    public void createAction(@RequestBody Action action) {
-        actionService.insertAction(action);
-    }
 
 
     private File convertMultiPartToFile(MultipartFile file) throws IOException {

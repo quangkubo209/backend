@@ -66,7 +66,7 @@ public class ValidateFile {
         try (FileInputStream fi = new FileInputStream(excelFile);
              Workbook workbook = WorkbookFactory.create(fi)) {
 
-            Sheet sheet = workbook.getSheet("Userlist Info");
+            Sheet sheet = workbook.getSheet("UserlistInfo");
             if (sheet == null) {
                 errors.add("Sheet UserlistInfo not found ");
             }
